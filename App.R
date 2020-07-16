@@ -188,7 +188,7 @@ ui <- fluidPage(
       radioButtons("showserieschoice", "Type of cases:",
                    choices = c("Cumulative cases" = "cumulative",
                                "Daily increase" = "daily"),
-                   selected = "daily"),
+                   selected = "cumulative"),
       # Add a Slider Input to select date range
       sliderInput("daterange", "Date range shown:",
                   min = date.min,
