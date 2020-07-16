@@ -183,7 +183,7 @@ ui <- fluidPage(
       # Select types of cases
       checkboxGroupInput("showcasechoice", "Status:",
                          choices = c("Confirmed","Active", "Deaths", "Recovered"),
-                         selected = c("Confirmed","Active", "Deaths", "Recovered")),
+                         selected = c("Active")),
       # Select cumulative or daily
       radioButtons("showserieschoice", "Type of cases:",
                    choices = c("Cumulative cases" = "cumulative",
