@@ -1,7 +1,4 @@
-########################   Basic stuff for new file ##################################
-##### clear env ####
-rm(list = ls())
-
+# Load packages
 library(shiny)
 library(plotly)
 library(shinydashboard)
@@ -16,14 +13,13 @@ library(date)
 
 ##################### Fetch updated data ##########################
 #### Get data from sources:
-#Old depreciated sources:
 # Confirmed cases: https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv
 # Deaths: https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv
 # Recovered: https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv
-#To use now:
-confirmed.raw <- read.csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"))
-deaths.raw <- read.csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"))
-recovered.raw <- read.csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv"), fileEncoding  = "UTF-8-BOM")
+confirmed.raw <- read.csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv"))
+deaths.raw <- read.csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv"))
+recovered.raw <- read.csv(url("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv"))
+
 
 #### Prep data
 # confirmed cases
@@ -33,7 +29,6 @@ confirmed <- confirmed.raw %>%
   select (-c(Country.Region, Lat, Long))%>%
   rename(state = Province.State)
 confirmed <- gather(confirmed, key = "date", value = "confirmed", -"state")
-confirmed$state <-as.character(confirmed$state)
 # Deaths
 deaths <- deaths.raw %>%
   filter(Country.Region=="Australia") %>%
@@ -41,25 +36,16 @@ deaths <- deaths.raw %>%
   select (-c(Country.Region, Lat, Long))%>%
   rename(state = Province.State)
 deaths <- gather(deaths, key = "date", value = "deaths", -"state")
-deaths$state <-as.character(deaths$state)
-# Recovered
-names(recovered.raw)[1] <- "Province.State"
+# Deaths
 recovered <- recovered.raw %>%
   filter(Country.Region=="Australia") %>%
   filter(Province.State!="From Diamond Princess") %>%
   select (-c(Country.Region, Lat, Long))%>%
   rename(state = Province.State)
 recovered <- gather(recovered, key = "date", value = "recovered", -"state")
-recovered$state <-as.character(recovered$state)
-# fix date inconsistency
-recovered$date <-  gsub("2020", "20", recovered$date)
 # Put it together
 aus.corona <- left_join(confirmed, deaths, by = c("state", "date"))
 aus.corona <- left_join(aus.corona, recovered, by = c("state", "date"))
-
-
-
-
 # Fix State factor levels mess
 aus.corona$state <- as.character(aus.corona$state)
 aus.corona$state <- as.factor(aus.corona$state)
@@ -102,6 +88,8 @@ aus.corona$status[aus.corona$status=="deaths"] <-"Deaths"
 aus.corona$status[aus.corona$status=="recovered"] <-"Recovered"
 # Ordered levels
 aus.corona$status <- factor(aus.corona$status, levels = c("Confirmed", "Active", "Recovered", "Deaths"))
+# For series filtering
+aus.corona$tokeep <- 0
 # separate files for each state
 aus.corona.nat <- aus.corona%>%filter(state == "National")
 aus.corona.act <- aus.corona%>%filter(state == "Australian Capital Territory")
@@ -119,7 +107,7 @@ date.min <- min(aus.corona$date, na.rm = TRUE)
 
 
 
-#############################  BEGIN Much prettier graph style   ###################################
+#############################  Begin Much better graph style   ###################################
 theme_Publication <- function(base_size=14) {
   library(grid)
   library(ggthemes)
@@ -159,7 +147,7 @@ scale_colour_Publication <- function(...){
   discrete_scale("colour","Publication",manual_pal(values = c("#386cb0","#fdb462","#7fc97f","#ef3b2c","#662506","#a6cee3","#fb9a99","#984ea3","#ffff33")), ...)
   
 }
-#############################  END Much prettier graph style   ###################################
+#############################  END Much better graph style   ###################################
 # Common themes
 mylinesize = 1.25
 mydotsize = 2.5
@@ -181,11 +169,11 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       # Select types of cases
-      checkboxGroupInput("showcasechoice", "Status:",
+      checkboxGroupInput("showcasechoice", "Status:", 
                          choices = c("Confirmed","Active", "Deaths", "Recovered"),
-                         selected = c("Active")),
+                         selected = c("Confirmed","Active", "Deaths", "Recovered")),
       # Select cumulative or daily
-      radioButtons("showserieschoice", "Type of cases:",
+      radioButtons("showserieschoice", "Type of cases:", 
                    choices = c("Cumulative cases" = "cumulative",
                                "Daily increase" = "daily"),
                    selected = "cumulative"),
@@ -193,14 +181,15 @@ ui <- fluidPage(
       sliderInput("daterange", "Date range shown:",
                   min = date.min,
                   max = date.max,
-                  value = c(date.min, date.max)),
+                  value = c(date.max-21, date.max)),
       h4("About this app"),
       h5("This app was written by Jorrit Gosens."),
       h5("The data used in this tracker is compiled by the"),
       h5(tags$a("Center for Systems Science and Engineering (CSSE) at Johns Hopkins University", href="https://gisanddata.maps.arcgis.com/apps/opsdashboard/index.html#/bda7594740fd40299423467b48e9ecf6")),
       h5("See also their publication here:"),
       h5(tags$a("An interactive web-based dashboard to track COVID-19 in real time", href="https://doi.org/10.1016/S1473-3099(20)30120-1"),
-         h5("This data is updated daily."))
+         h5("This data is updated daily.")   
+      )
     ),
     
     # Show a plot of the trend
@@ -303,7 +292,7 @@ server <- function(input, output, session) {
     
   })
   
-  # Bracket to end whole server section
+  # Bracket to end whole server section  
 }
-# Run the application
+# Run the application 
 shinyApp(ui = ui, server = server)

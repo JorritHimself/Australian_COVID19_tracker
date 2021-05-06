@@ -1,0 +1,13 @@
+name: Australian_COVID19_tracker
+title: Australian_COVID19_tracker
+username:
+account: jorritgosens
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1976644
+bundleId: 3398335
+url: https://jorritgosens.shinyapps.io/Australian_COVID19_tracker/
+when: 1594879315.94957
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .gitattributes|Archive

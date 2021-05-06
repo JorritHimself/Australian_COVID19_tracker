@@ -119,7 +119,7 @@ date.min <- min(aus.corona$date, na.rm = TRUE)
 
 
 
-#############################  BEGIN Much prettier graph style   ###################################
+#############################  Begin Much better graph style   ###################################
 theme_Publication <- function(base_size=14) {
   library(grid)
   library(ggthemes)
@@ -159,7 +159,7 @@ scale_colour_Publication <- function(...){
   discrete_scale("colour","Publication",manual_pal(values = c("#386cb0","#fdb462","#7fc97f","#ef3b2c","#662506","#a6cee3","#fb9a99","#984ea3","#ffff33")), ...)
   
 }
-#############################  END Much prettier graph style   ###################################
+#############################  END Much better graph style   ###################################
 # Common themes
 mylinesize = 1.25
 mydotsize = 2.5
@@ -183,7 +183,7 @@ ui <- fluidPage(
       # Select types of cases
       checkboxGroupInput("showcasechoice", "Status:",
                          choices = c("Confirmed","Active", "Deaths", "Recovered"),
-                         selected = c("Active")),
+                         selected = c("Confirmed","Active", "Deaths", "Recovered")),
       # Select cumulative or daily
       radioButtons("showserieschoice", "Type of cases:",
                    choices = c("Cumulative cases" = "cumulative",
@@ -193,16 +193,18 @@ ui <- fluidPage(
       sliderInput("daterange", "Date range shown:",
                   min = date.min,
                   max = date.max,
-                  value = c(date.min, date.max)),
+                  value = c(date.max-21, date.max)),
       h4("About this app"),
       h5("This app was written by Jorrit Gosens."),
       h5("The data used in this tracker is compiled by the"),
       h5(tags$a("Center for Systems Science and Engineering (CSSE) at Johns Hopkins University", href="https://gisanddata.maps.arcgis.com/apps/opsdashboard/index.html#/bda7594740fd40299423467b48e9ecf6")),
       h5("See also their publication here:"),
       h5(tags$a("An interactive web-based dashboard to track COVID-19 in real time", href="https://doi.org/10.1016/S1473-3099(20)30120-1"),
-         h5("This data is updated daily."))
+         h5("This data is updated daily."),
+         h5("NB: Data on recovered cases is updated only untill 22/03, as Johns Hopkins University has made changes to the way darta is reported. This will be updated again when new data becomes available.")
+      )
     ),
-    
+
     # Show a plot of the trend
     mainPanel(
       plotOutput("plot.nat"),
@@ -229,7 +231,7 @@ server <- function(input, output, session) {
   tas.filtered <- reactive({aus.corona.tas %>%filter(between(date, input$daterange[1], input$daterange[2]))%>%filter(type == input$showserieschoice)%>% filter(status %in% input$showcasechoice)})
   vic.filtered <- reactive({aus.corona.vic %>%filter(between(date, input$daterange[1], input$daterange[2]))%>%filter(type == input$showserieschoice)%>% filter(status %in% input$showcasechoice)})
   wa.filtered <- reactive({aus.corona.wa %>%filter(between(date, input$daterange[1], input$daterange[2]))%>%filter(type == input$showserieschoice)%>% filter(status %in% input$showcasechoice)})
-  
+
   ##################################################   All those plots ###############################################
   ##################################################     National   ###################################################
   output$plot.nat <- renderPlot({
@@ -244,7 +246,7 @@ server <- function(input, output, session) {
       aes(x = date)+ geom_line(aes(y = no.of.cases, group=status, color=status),size=mylinesize)+geom_point(aes(y = no.of.cases, group=status, color=status),size=mydotsize)+
       labs (x = "Date", y = "Number of cases", title = "New South Wales")+mytweaks+mylabs+myaxes+
       scale_colour_Publication()+ theme_Publication()
-    
+
   })
   ##################################################     Victoria   ###################################################
   output$plot.vic <- renderPlot({
@@ -252,7 +254,7 @@ server <- function(input, output, session) {
       aes(x = date)+ geom_line(aes(y = no.of.cases, group=status, color=status),size=mylinesize)+geom_point(aes(y = no.of.cases, group=status, color=status),size=mydotsize)+
       labs (x = "Date", y = "Number of cases", title = "Victoria")+mytweaks+mylabs+myaxes+
       scale_colour_Publication()+ theme_Publication()
-    
+
   })
   ##################################################     Queensland   ###################################################
   output$plot.qld <- renderPlot({
@@ -260,7 +262,7 @@ server <- function(input, output, session) {
       aes(x = date)+ geom_line(aes(y = no.of.cases, group=status, color=status),size=mylinesize)+geom_point(aes(y = no.of.cases, group=status, color=status),size=mydotsize)+
       labs (x = "Date", y = "Number of cases", title = "Queensland")+mytweaks+mylabs+myaxes+
       scale_colour_Publication()+ theme_Publication()
-    
+
   })
   ##################################################     Western Australia   ###################################################
   output$plot.wa <- renderPlot({
@@ -268,7 +270,7 @@ server <- function(input, output, session) {
       aes(x = date)+ geom_line(aes(y = no.of.cases, group=status, color=status),size=mylinesize)+geom_point(aes(y = no.of.cases, group=status, color=status),size=mydotsize)+
       labs (x = "Date", y = "Number of cases", title = "Western Australia")+mytweaks+mylabs+myaxes+
       scale_colour_Publication()+ theme_Publication()
-    
+
   })
   ##################################################     South Australia   ###################################################
   output$plot.sa <- renderPlot({
@@ -276,7 +278,7 @@ server <- function(input, output, session) {
       aes(x = date)+ geom_line(aes(y = no.of.cases, group=status, color=status),size=mylinesize)+geom_point(aes(y = no.of.cases, group=status, color=status),size=mydotsize)+
       labs (x = "Date", y = "Number of cases", title = "South Australia")+mytweaks+mylabs+myaxes+
       scale_colour_Publication()+ theme_Publication()
-    
+
   })
   ##################################################     Tasmania   ###################################################
   output$plot.tas <- renderPlot({
@@ -284,7 +286,7 @@ server <- function(input, output, session) {
       aes(x = date)+ geom_line(aes(y = no.of.cases, group=status, color=status),size=mylinesize)+geom_point(aes(y = no.of.cases, group=status, color=status),size=mydotsize)+
       labs (x = "Date", y = "Number of cases", title = "Tasmania")+mytweaks+mylabs+myaxes+
       scale_colour_Publication()+ theme_Publication()
-    
+
   })
   ##################################################     Australian Capital Territory   ###################################################
   output$plot.act <- renderPlot({
@@ -292,7 +294,7 @@ server <- function(input, output, session) {
       aes(x = date)+ geom_line(aes(y = no.of.cases, group=status, color=status),size=mylinesize)+geom_point(aes(y = no.of.cases, group=status, color=status),size=mydotsize)+
       labs (x = "Date", y = "Number of cases", title = "Australian Capital Territory")+mytweaks+mylabs+myaxes+
       scale_colour_Publication()+ theme_Publication()
-    
+
   })
   ##################################################     Northern Territory  ###################################################
   output$plot.nt <- renderPlot({
@@ -300,9 +302,9 @@ server <- function(input, output, session) {
       aes(x = date)+ geom_line(aes(y = no.of.cases, group=status, color=status),size=mylinesize)+geom_point(aes(y = no.of.cases, group=status, color=status),size=mydotsize)+
       labs (x = "Date", y = "Number of cases", title = "Northern Territory")+mytweaks+mylabs+myaxes+
       scale_colour_Publication()+ theme_Publication()
-    
+
   })
-  
+
   # Bracket to end whole server section
 }
 # Run the application
